@@ -16,6 +16,6 @@ def beagle2vep(r: pd.Series) -> list[str]:
 
     """
 
-    r_edits = r["Nucleotide Edits"].split(", ")
+    r_edits = r["Nucleotide Edits"].replace(",", ";").split(";")
 
-    return [f"{r['Target Transcript ID']}:c.{v}" for v in r_edits]
+    return [f"{r['Target Transcript ID']}:c.{v.strip()}" for v in r_edits]
