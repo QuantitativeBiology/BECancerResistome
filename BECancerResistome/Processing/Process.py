@@ -44,6 +44,7 @@ def process_GR(df):
 
     df = df.rename(columns={'Construct Barcode': 'Guide'}, inplace=False)
 
+    
     editor_types = set()
     data_cols = []
     for col in df.columns:
@@ -104,18 +105,17 @@ def process_GR(df):
 
     ## HERE WE GET THE GENES FROM BES
     bes= pd.read_excel("/Users/joanacorreia/Desktop/Tese/Original Counts files/Base Editing Screens Samplesheet.xlsx",sheet_name='BE sgRNA library_GR' )
-    df2_selected = bes[['sgRNA sequence', 'Editor','GeneID']]
+    df2_selected = bes[['sgRNA sequence','GeneID']]
     df2_selected.rename(columns={'sgRNA sequence': 'Guide'}, inplace=True)
-    df2_selected['Editor'] = df2_selected['Editor'].replace({'A-G': 'ABE', 'C-T': 'CBE'})
-
-    table=merged_df.merge(df2_selected, on=["Guide","Editor"],how="left").drop_duplicates()
+    # df2_selected['Editor'] = df2_selected['Editor'].replace({'A-G': 'ABE', 'C-T': 'CBE'})
+    table = merged_df.merge(df2_selected, on=["Guide"], how="left").drop_duplicates()
+    #table=merged_df.merge(df2_selected, on=["Guide","Editor"],how="left").drop_duplicates()
     new_order = ['Guide', 'GeneID', 'Editor'] + [col for col in table.columns if col not in ["Guide", "GeneID", "Editor"]]
     df_final = table[new_order]
-    df_final= df_final.sort_values(by="GeneID")
-    df_final = df_final.reset_index(drop=True)
-    df_final.rename(columns={'pDNA_pDNA_pDNA': 'pDNA'}, inplace=True)
+    # df_final= df_final.sort_values(by="GeneID")
+    # df_final = df_final.reset_index(drop=True)
+    # df_final.rename(columns={'pDNA_pDNA_pDNA': 'pDNA'}, inplace=True)
     df_final.rename(columns={'GeneID': 'Gene'}, inplace=True)
-
     return df_final
 
 #MC
