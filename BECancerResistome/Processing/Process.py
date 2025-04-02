@@ -1,6 +1,12 @@
 import pandas as pd
 import numpy as np
 import re
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+base_dir = os.getenv("BASE_DIR")
+
 
 #RH
 
@@ -14,7 +20,7 @@ def process_RH(df,subset='BRCA1_BRCA2_set'):
     df.reset_index(drop=True, inplace=True)
     df.rename(columns={'Cell line_Condition_sgRNA sequence': 'Guide'}, inplace=True)
 
-    bes= pd.read_excel("/Users/joanacorreia/Desktop/Tese/Original Counts files/Base Editing Screens Samplesheet.xlsx",sheet_name='BE sgRNA library_RH' )
+    bes= pd.read_excel(os.path.join(base_dir,"Base Editing Screens Samplesheet.xlsx"),sheet_name='BE sgRNA library_RH' )
     if subset in bes['Subset'].unique():
         bes= bes[bes['Subset'] == subset]       
     else:
@@ -104,7 +110,7 @@ def process_GR(df):
 
 
     ## HERE WE GET THE GENES FROM BES
-    bes= pd.read_excel("/Users/joanacorreia/Desktop/Tese/Original Counts files/Base Editing Screens Samplesheet.xlsx",sheet_name='BE sgRNA library_GR' )
+    bes= pd.read_excel(os.path.join(base_dir,"Base Editing Screens Samplesheet.xlsx"),sheet_name='BE sgRNA library_GR' )
     df2_selected = bes[['sgRNA sequence','GeneID']]
     df2_selected.rename(columns={'sgRNA sequence': 'Guide'}, inplace=True)
     # df2_selected['Editor'] = df2_selected['Editor'].replace({'A-G': 'ABE', 'C-T': 'CBE'})
@@ -149,13 +155,33 @@ def process_MC(df):
     df_pivot.columns = [re.sub(r'exp2', 'RepB', col) for col in df_pivot.columns]
     df_pivot.columns = [re.sub(r'exp3', 'RepC', col) for col in df_pivot.columns]
     df_pivot.columns = df_pivot.columns.str.replace("__", "_", regex=False)
-    return(df_pivot)
+
+    MC_QC=pd.read_excel(os.path.join(base_dir,'41588_2024_1948_MOESM4_ESM.xlsx'),sheet_name='ST1 base_editing')
+    MC_QC=MC_QC[['Gene','guide','sgRNA_type']]
+    MC_QC.rename(columns={'guide': 'Guide'}, inplace=True)
+    MC_QC["Gene"] = MC_QC["Gene"].fillna("Unknown")
+    print(MC_QC['sgRNA_type'].unique())
 
 
+    MC=df_pivot.merge(MC_QC, on=["Guide","Gene"],how='left')
+    #Replace controls in Gene column
+    MC["Gene"] = MC.apply(lambda row: row["sgRNA_type"] if row["sgRNA_type"] != "exonic" else row["Gene"], axis=1)
+    MC = MC.drop(columns=["sgRNA_type"])
+    return(MC)
 
+
+# Comparison names:
+# RH_BRCA1_processed
+# RH_BRCA2_processed
+# RH_MCL1_processed
+# RH_BCL2L1_processed
+# RH_PARP1_processed
+# MC_processed
+# GR_A549_ABE_CBE_MELJUSO_CBE_Pro
+# GR_MELJUSO_ABE_Processed
 
 def LFC_Z(table1,comparison_name):
-    comparisons= pd.read_excel("/Users/joanacorreia/Desktop/Tese/Original Counts files/Base Editing Screens Samplesheet.xlsx",sheet_name='Comparisons' )
+    comparisons= pd.read_excel(os.path.join(base_dir,"Base Editing Screens Samplesheet.xlsx"),sheet_name='Comparisons' )
     if comparison_name in comparisons['ComparisonName'].unique():
         comparisons= comparisons[comparisons['ComparisonName'] == comparison_name]    
     
