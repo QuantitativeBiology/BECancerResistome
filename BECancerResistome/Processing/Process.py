@@ -4,9 +4,6 @@ import re
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
-base_dir = os.getenv("BASE_DIR")
-
 
 #RH
 
@@ -20,7 +17,7 @@ def process_RH(df,subset='BRCA1_BRCA2_set'):
     df.reset_index(drop=True, inplace=True)
     df.rename(columns={'Cell line_Condition_sgRNA sequence': 'Guide'}, inplace=True)
 
-    bes= pd.read_excel(os.path.join(base_dir,"Base Editing Screens Samplesheet.xlsx"),sheet_name='BE sgRNA library_RH' )
+    bes= pd.read_excel("data/Base Editing Screens Samplesheet.xlsx",sheet_name='BE sgRNA library_RH' )
     if subset in bes['Subset'].unique():
         bes= bes[bes['Subset'] == subset]       
     else:
@@ -110,7 +107,7 @@ def process_GR(df):
 
 
     ## HERE WE GET THE GENES FROM BES
-    bes= pd.read_excel(os.path.join(base_dir,"Base Editing Screens Samplesheet.xlsx"),sheet_name='BE sgRNA library_GR' )
+    bes= pd.read_excel("data/Base Editing Screens Samplesheet.xlsx",sheet_name='BE sgRNA library_GR' )
     df2_selected = bes[['sgRNA sequence','GeneID']]
     df2_selected.rename(columns={'sgRNA sequence': 'Guide'}, inplace=True)
     # df2_selected['Editor'] = df2_selected['Editor'].replace({'A-G': 'ABE', 'C-T': 'CBE'})
@@ -156,7 +153,7 @@ def process_MC(df):
     df_pivot.columns = [re.sub(r'exp3', 'RepC', col) for col in df_pivot.columns]
     df_pivot.columns = df_pivot.columns.str.replace("__", "_", regex=False)
 
-    MC_QC=pd.read_excel(os.path.join(base_dir,'41588_2024_1948_MOESM4_ESM.xlsx'),sheet_name='ST1 base_editing')
+    MC_QC=pd.read_excel('data/41588_2024_1948_MOESM4_ESM.xlsx',sheet_name='ST1 base_editing')
     MC_QC=MC_QC[['Gene','guide','sgRNA_type']]
     MC_QC.rename(columns={'guide': 'Guide'}, inplace=True)
     MC_QC["Gene"] = MC_QC["Gene"].fillna("Unknown")
@@ -181,7 +178,7 @@ def process_MC(df):
 # GR_MELJUSO_ABE_Processed
 
 def LFC_Z(table1,comparison_name):
-    comparisons= pd.read_excel(os.path.join(base_dir,"Base Editing Screens Samplesheet.xlsx"),sheet_name='Comparisons' )
+    comparisons= pd.read_excel("data/Base Editing Screens Samplesheet.xlsx",sheet_name='Comparisons' )
     if comparison_name in comparisons['ComparisonName'].unique():
         comparisons= comparisons[comparisons['ComparisonName'] == comparison_name]    
     
@@ -207,11 +204,8 @@ def LFC_Z(table1,comparison_name):
         if col in df_lfc.columns:
             mean = df_lfc[col].mean()
             std = df_lfc[col].std()
-            df_zscores[col] = (df_lfc[col] - mean) / std  # Z-score normalization
-
-    
-    # df_zscores =df_zscores.drop["pDNA"]
-    # df_lfc= df_lfc.drop["pDNA"]
+            df_zscores[col] = (df_lfc[col] - mean) / std 
+ 
     return df_lfc, df_zscores
 
 
