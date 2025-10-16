@@ -7,3 +7,5 @@ seaborn
 jupyter
 openpyxl
 python-dotenv
+xgboost
+scikit-optimize
