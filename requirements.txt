@@ -10,3 +10,5 @@ python-dotenv
 xgboost
 scikit-optimize
 shap
+optuna
+plotly
