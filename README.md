@@ -153,7 +153,7 @@ Place these in a `data/` folder next to the notebooks:
 
 logcounts_ABE.csv and meta_ABE.csv — download from Zenodo (doi:10.5281/zenodo.16951444)
 protein-coding_genes_HGNC.txt and hgnc-symbol-check.csv — included in this repository
-zscores-unambiguous-VEPannotated-processed-control.csv.zip — VEP annotations per guide, included in this repository
+zscores-unambiguous-VEPannotated-processed-control.zip — VEP annotations per guide, included in this repository
 41588_2024_1948_MOESM4_ESM.xlsx — Supplementary Table 2 of Coelho et al. (2024), from the paper's Supplementary Information
 
 ### 1. Perturb-seq_processing_final.ipynb
