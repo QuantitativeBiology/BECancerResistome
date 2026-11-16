@@ -1,8 +1,8 @@
 # Custom
 .DS_Store
 data
-data_design/
 reports/
+paper/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

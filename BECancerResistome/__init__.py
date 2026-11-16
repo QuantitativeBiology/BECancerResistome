@@ -3,7 +3,6 @@
 
 import matplotlib as mpl
 
-
 # Figure style
 GREY, RED = "#8a949e", "#c0392b"
 mpl.rcParams.update(
@@ -27,4 +26,4 @@ mpl.rcParams.update(
         "savefig.bbox": "tight",
     }
 )
-mpl.rcParams["figure.dpi"] = 150  # sharper figures in the notebook
+mpl.rcParams["figure.dpi"] = 300
