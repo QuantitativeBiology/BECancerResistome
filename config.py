@@ -14,7 +14,10 @@ DATA = ROOT / "data"
 SOURCE = DATA / "source"  # original files
 ANNOTATION = SOURCE / "annotation"  # BEAGLE design, Ensembl VEP output, library sheets
 SCREEN = SOURCE / "screen"  # this study: A375 + HT29, CBE, LIN/PIC/SCH
-COELHO = SOURCE / "coelho2024"  # independent screen: Coelho et al. 2024 Nat Genet (PMID: 39424923)
+COELHO = (
+    SOURCE / "coelho2024"
+)  # independent screen: Coelho et al. 2024 Nat Genet (PMID: 39424923)
+PLOTS = ROOT / "plots"  # figure panels
 
 
 # --------------------------------------------------------------------------------------
@@ -34,6 +37,7 @@ LIBRARY_SHEETS = {
     COELHO_STUDY: "BE sgRNA library_MC",
 }
 
+
 def dataset_file(study: str, kind: str, suffix: str = "csv") -> Path:
     """data/<study>_<kind>.<suffix>, so a dataset's files sort together in one block.
 
@@ -41,6 +45,67 @@ def dataset_file(study: str, kind: str, suffix: str = "csv") -> Path:
     and SpliceAI output - carry no study and are not built here.
     """
     return DATA / f"{study}_{kind}.{suffix}"
+
+
+# --------------------------------------------------------------------------------------
+# This study's screen: cell lines, arms and the genes the library targets
+# --------------------------------------------------------------------------------------
+CELL_LINES = ["A375", "HT29"]
+CELL_LINE_LABEL = {"A375": "A375", "HT29": "HT-29"}
+
+ARMS = ["DO", "PIC", "LIN", "SCH"]
+DRUG_ARMS = ["LIN", "PIC", "SCH"]  # figure order: Linsitinib, Pictilisib, SCH772984
+ARM_LABEL = {
+    "DO": "Untreated",
+    "PIC": "Pictilisib",
+    "LIN": "Linsitinib",
+    "SCH": "SCH772984",
+}
+
+# Gene order and grouping follow
+GENE_GROUPS = {
+    "mTOR / PI3K\npathway": [
+        "IGF1R",
+        "EGFR",
+        "ERBB2",
+        "ERBB3",
+        "FGFR2",
+        "GAB1",
+        "SHC1",
+        "GRB2",
+        "PIK3CA",
+        "PIK3CB",
+        "PIK3CD",
+        "PTEN",
+        "AKT1",
+        "MTOR",
+        "RICTOR",
+    ],
+    "MAPK/ERK\npathway": [
+        "NF1",
+        "KRAS",
+        "NRAS",
+        "HRAS",
+        "BRAF",
+        "RAF1",
+        "MAP2K1",
+        "MAP2K2",
+        "MAPK1",
+        "MAPK3",
+        "MYC",
+    ],
+    "Miscellaneous\ngenes": ["PGD", "PKM", "PHLDA2", "ITGA3"],
+}
+
+GENE_PATHWAY = {
+    gene: group for group, genes in GENE_GROUPS.items() for gene in genes
+}
+
+GUIDE_CLASS_LABEL = {
+    "non_targeting": "Non-targeting",
+    "targeting": "Targeting",
+    "splice_essential": "Essential\nsplice site",
+}
 
 
 # --------------------------------------------------------------------------------------
