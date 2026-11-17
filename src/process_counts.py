@@ -8,11 +8,11 @@ Raw counts to hit calls.
 5. Z-score every fold-change column on the non-targeting controls.
 6. Collapse replicates to the smallest absolute (min abd) z, then call hits.
 
-ABE and CBE edit the same guide differently, so they are separate perturbations: a
-condition keeps them apart wherever a study screened both, and omits the editor from the
-name where there is only one. Collapsing by min |z| bounds the magnitude but does not
-require the replicates to agree in direction, so `replicates_agree` and `n_replicates`
-record that instead of changing the published call.
+ABE and CBE edit the same guide differently, so they are separate perturbations.
+A hit is a guide that shows a significant change in the fold-change compared to 
+the non-targeting controls, and the change is consistent across replicates.
+`withheld_discordant` marks the guides that clear the FDR and fail that
+second test.
 """
 
 import sys
@@ -98,13 +98,16 @@ def call_hits(collapsed: pd.DataFrame, controls: pd.Index) -> pd.DataFrame:
         observed = block.zscore.to_numpy()
         p = 2 * stats.norm.sf(np.abs(observed - centre) / spread)
         fdr = multipletests(p, method="fdr_bh")[1]
-        significant = fdr < FDR_THRESHOLD
+        passes_fdr = fdr < FDR_THRESHOLD
+        agree = block.replicates_agree.to_numpy()
+        significant = passes_fdr & agree
         calls.append(
             block.assign(
                 control_mean=centre,
                 control_sd=spread,
                 pvalue=p,
                 fdr=fdr,
+                withheld_discordant=passes_fdr & ~agree,
                 call=np.where(
                     significant & (observed > centre),
                     RESISTANCE,
@@ -194,11 +197,11 @@ for study in C.STUDIES:
         f"replicates{kept_apart}"
     )
     print(f"  calls at FDR < {FDR_THRESHOLD}: {hits.call.value_counts().to_dict()}")
-    significant = hits[hits.call != NEUTRAL]
-    discordant = int((~significant.replicates_agree).sum())
+    withheld = int(hits.withheld_discordant.sum())
+    called = int((hits.call != NEUTRAL).sum())
     print(
-        f"  of those, {discordant:,} rest on replicates that disagree in direction "
-        f"({discordant / max(len(significant), 1):.1%})"
+        f"  {withheld:,} further guides cleared the FDR but were withheld because their "
+        f"replicates disagree in direction ({withheld / max(called + withheld, 1):.1%})"
     )
     drug = per_condition[per_condition.index.str.endswith("_vs_untreated")]
     if len(drug):

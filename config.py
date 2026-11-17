@@ -97,9 +97,64 @@ GENE_GROUPS = {
     "Miscellaneous\ngenes": ["PGD", "PKM", "PHLDA2", "ITGA3"],
 }
 
-GENE_PATHWAY = {
-    gene: group for group, genes in GENE_GROUPS.items() for gene in genes
+# --------------------------------------------------------------------------------------
+# External resources: cell line identifiers, drugs and their targets
+# --------------------------------------------------------------------------------------
+DEPMAP = DATA / "depmap26Q3"  # expression, copy number, CRISPR gene effect
+STRING = DATA / "string"  # protein links v12.5, human
+GDSC = DATA / "gdsc"  # fitted dose response, 24Jul22
+PROTEOMICS = DATA / "proteomics"  # ProCan, indexed by Sanger model id
+PROTVAR = DATA / "protvar"  # FoldX scan, ProtVar output, predicted complexes
+
+DEPMAP_MODEL = {
+    "A375": "ACH-000219",
+    "HT29": "ACH-000552",
+    "H23": "ACH-000900",
+    "MHHES1": "ACH-000391",
+    "PC9": "ACH-000779",
 }
+SANGER_MODEL = {
+    "A375": "SIDM00795",
+    "HT29": "SIDM00136",
+    "H23": "SIDM00138",
+    "MHHES1": "SIDM00386",
+    "PC9": "SIDM00236",
+}
+
+# The genes each compound acts on, used for the network distance feature.
+DRUG_TARGETS = {
+    "pictilisib": ["PIK3CA", "PIK3CB", "PIK3CD", "PIK3CG"],
+    "linsitinib": ["IGF1R", "INSR"],
+    "SCH772984": ["MAPK1", "MAPK3"],
+    "sotorasib": ["KRAS"],
+    "adagrasib": ["KRAS"],
+    "trametinib": ["MAP2K1", "MAP2K2"],
+    "dabrafenib + cetuximab": ["BRAF", "EGFR"],
+    "gefitinib": ["EGFR"],
+    "osimertinib": ["EGFR"],
+    "olaparib": ["PARP1", "PARP2"],
+    "niraparib": ["PARP1", "PARP2"],
+}
+
+# GDSC names per compound.
+GDSC_DRUG_NAMES = {
+    "pictilisib": ["Pictilisib"],
+    "linsitinib": ["Linsitinib"],
+    "SCH772984": ["SCH772984"],
+    "sotorasib": [],
+    "adagrasib": [],
+    "trametinib": ["Trametinib"],
+    "dabrafenib + cetuximab": ["Dabrafenib", "Cetuximab"],
+    "gefitinib": ["Gefitinib"],
+    "osimertinib": ["Osimertinib"],
+    "olaparib": ["Olaparib"],
+    "niraparib": ["Niraparib"],
+}
+
+STRING_CONFIDENCE = 900  # combined_score threshold, 0.9 on STRING's scale
+
+
+GENE_PATHWAY = {gene: group for group, genes in GENE_GROUPS.items() for gene in genes}
 
 GUIDE_CLASS_LABEL = {
     "non_targeting": "Non-targeting",
