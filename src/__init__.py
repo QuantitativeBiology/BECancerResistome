@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 import matplotlib as mpl
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import config as C
@@ -35,13 +36,13 @@ mpl.rcParams.update(
 mpl.rcParams["figure.dpi"] = 300
 
 # Figure palette
-CELL_LINE_COLOUR = {"A375": "#2c6fa8", "HT29": "#c0392b"}
+CELL_LINE_COLOUR = {"A375": "#009ADE", "HT29": "#FF1F5B"}
 # fmt: off
 ARM_COLOUR = {
-    ("A375", "DO"): "#1f4e76", ("A375", "LIN"): "#2c6fa8",
-    ("A375", "PIC"): "#5f92bd", ("A375", "SCH"): "#89aece",
-    ("HT29", "DO"): "#86281e", ("HT29", "LIN"): "#c0392b",
-    ("HT29", "PIC"): "#cf695e", ("HT29", "SCH"): "#dc9088",
+    ("A375", "DO"): "#006c9b", ("A375", "LIN"): "#009ade",
+    ("A375", "PIC"): "#3db2e6", ("A375", "SCH"): "#70c6ed",
+    ("HT29", "DO"): "#b21640", ("HT29", "LIN"): "#ff1f5b",
+    ("HT29", "PIC"): "#ff5582", ("HT29", "SCH"): "#ff82a3",
 }
 # fmt: on
 PLOT_DPI = 600
@@ -59,8 +60,73 @@ def arm_colour(cell_line: str, arm: str) -> str:
     return ARM_COLOUR[(cell_line, arm)]
 
 
+# Reference lines are dashed so they never read as data.
+DIAGONAL = dict(lw=0.5, color="0.55", linestyle=(0, (4, 3)), zorder=0)
+ORIGIN = dict(lw=0.4, color="0.8", linestyle=(0, (3, 3)), zorder=0)
+
+
+def axis_ticks(low: float, high: float, count: int = 5):
+    """Round tick positions that cover the range, with a tick at each end.
+
+    The axis limits are then set to the first and last tick, so no point is cut off
+    and the axis starts and ends on a labelled tick.
+    """
+    step = (high - low) / max(count, 1)
+    magnitude = 10 ** np.floor(np.log10(step)) if step > 0 else 1.0
+    for multiple in (1, 2, 2.5, 5, 10):
+        if step <= multiple * magnitude:
+            step = multiple * magnitude
+            break
+    start = np.floor(low / step) * step
+    stop = np.ceil(high / step) * step
+    return np.arange(start, stop + step / 2, step)
+
+
+def ticked_axis(ax, axis: str, low: float, high: float, count: int = 5):
+    """Round ticks covering the range on one axis, with a tick at each end."""
+    ticks = axis_ticks(low, high, count)
+    if axis == "x":
+        ax.set_xticks(ticks)
+        ax.set_xlim(ticks[0], ticks[-1])
+    else:
+        ax.set_yticks(ticks)
+        ax.set_ylim(ticks[0], ticks[-1])
+    return ticks
+
+
+def square_axes(ax, values, count: int = 5):
+    """Give a scatter equal, identically ticked x and y axes covering the data."""
+    finite = np.asarray(values, dtype=float)
+    finite = finite[np.isfinite(finite)]
+    ticks = axis_ticks(finite.min(), finite.max(), count)
+    ax.set_xticks(ticks)
+    ax.set_yticks(ticks)
+    ax.set_xlim(ticks[0], ticks[-1])
+    ax.set_ylim(ticks[0], ticks[-1])
+    ax.set_aspect("equal")
+    return ticks
+
+
+def trim_spines(ax) -> None:
+    """End each spine on a tick, so every axis starts and finishes at a tick mark."""
+    for side, axis, limits in (
+        ("bottom", ax.xaxis, ax.get_xlim()),
+        ("left", ax.yaxis, ax.get_ylim()),
+    ):
+        if side not in ax.spines:
+            continue
+        low, high = sorted(limits)
+        visible = [
+            t for t in axis.get_majorticklocs() if low - 1e-9 <= t <= high + 1e-9
+        ]
+        if len(visible) >= 2:
+            ax.spines[side].set_bounds(min(visible), max(visible))
+
+
 def save_plot(fig, name: str, dpi: int = PLOT_DPI) -> Path:
     """Write a panel to plots/<name>.png, which is not committed."""
+    for ax in fig.axes:
+        trim_spines(ax)
     C.PLOTS.mkdir(parents=True, exist_ok=True)
     path = C.PLOTS / f"{name}.png"
     fig.savefig(path, dpi=dpi, bbox_inches="tight", facecolor="white")
