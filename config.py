@@ -229,6 +229,5 @@ EDIT_WINDOW = range(4, 9)  # 1-based positions in the 20-nt guide, BEAGLE's "4..
 COMPLEMENT = {"A": "T", "T": "A", "C": "G", "G": "C"}
 
 # Ensembl VEP writes "-" where a field is empty.
-# Every VEP column is prefixed in the output, features can be selected with .filter(like=VEP_PREFIX).
 VEP_MISSING = "-"
 VEP_PREFIX = "vep_"
