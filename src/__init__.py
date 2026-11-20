@@ -36,13 +36,13 @@ mpl.rcParams.update(
 mpl.rcParams["figure.dpi"] = 300
 
 # Figure palette
-CELL_LINE_COLOUR = {"A375": "#009ADE", "HT29": "#FF1F5B"}
+CELL_LINE_COLOUR = {"A375": "#0072B2", "HT29": "#D55E00"}
 # fmt: off
 ARM_COLOUR = {
-    ("A375", "DO"): "#006c9b", ("A375", "LIN"): "#009ade",
-    ("A375", "PIC"): "#3db2e6", ("A375", "SCH"): "#70c6ed",
-    ("HT29", "DO"): "#b21640", ("HT29", "LIN"): "#ff1f5b",
-    ("HT29", "PIC"): "#ff5582", ("HT29", "SCH"): "#ff82a3",
+    ("A375", "DO"): "#014975", ("A375", "LIN"): "#0072B2",
+    ("A375", "PIC"): "#619FD1", ("A375", "SCH"): "#A7C9E7",
+    ("HT29", "DO"): "#974101", ("HT29", "LIN"): "#D55E00",
+    ("HT29", "PIC"): "#F79A6A", ("HT29", "SCH"): "#FFD9C6",
 }
 # fmt: on
 PLOT_DPI = 600
@@ -128,6 +128,6 @@ def save_plot(fig, name: str, dpi: int = PLOT_DPI) -> Path:
     for ax in fig.axes:
         trim_spines(ax)
     C.PLOTS.mkdir(parents=True, exist_ok=True)
-    path = C.PLOTS / f"{name}.png"
-    fig.savefig(path, dpi=dpi, bbox_inches="tight", facecolor="white")
-    return path
+    fig.savefig(C.PLOTS / f"{name}.png", dpi=dpi, bbox_inches="tight", facecolor="white")
+    fig.savefig(C.PLOTS / f"{name}.svg", bbox_inches="tight", facecolor="white")
+    return C.PLOTS / f"{name}.pdf"

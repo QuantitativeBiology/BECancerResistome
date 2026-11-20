@@ -323,8 +323,6 @@ structure = variants.merge(
     foldx, on=["uniprot", "residue", "wild_type", "mutant"], how="left"
 )
 
-# ProtVar fills what the FoldX scan misses and is the only source here for pockets.
-# Every ProtVar download in data/protvar is read, so adding one needs no code change.
 FOLDX_FIELD = "Foldx_prediction(foldxDdg;plddt)"
 GENOMIC_BLOCK = (
     6  # the trailing fields, from Genomic_location to Position_in_structures
@@ -362,9 +360,6 @@ for path in sorted(C.PROTVAR.glob("*.csv")):
 assert downloads, f"no ProtVar output found in {C.PROTVAR}"
 protvar = pd.concat(downloads, ignore_index=True)
 
-# ProtVar falls back to the UniProt canonical isoform when the reference residue we ask
-# about is not the one it holds at that position. Those rows describe a different
-# residue, so they are discarded rather than joined.
 mismatched = protvar.Notes.astype(str).str.contains(
     "does not match the UniProt sequence", na=False
 )
@@ -375,9 +370,13 @@ if mismatched.any():
     )
 protvar = protvar[~mismatched]
 protvar_pair = protvar.Amino_acid_change.astype(str).str.split("/", expand=True)
+
+
 protvar = protvar.assign(
-    gene=protvar.Gene,
-    residue=pd.to_numeric(protvar.Amino_acid_position, errors="coerce").astype("Int64"),
+    chromosome=protvar.Chromosome.astype(str).str.removesuffix(".0"),
+    position=pd.to_numeric(protvar.Coordinate, errors="coerce").astype("Int64"),
+    genomic_ref=protvar.Reference_allele,
+    genomic_alt=protvar.Alternative_allele,
     wild_type=protvar_pair[0].map(THREE_TO_ONE),
     mutant=protvar_pair[1].map(THREE_TO_ONE),
 )
@@ -395,21 +394,50 @@ protvar["pocket_score"] = pd.to_numeric(
 protvar["in_predicted_pocket"] = protvar.pocket_buriedness.notna()
 protvar["protvar_annotated"] = True
 
+GENOMIC_KEY = ["chromosome", "position", "genomic_ref", "genomic_alt"]
 supplement = protvar[
     [
-        "gene",
-        "residue",
-        "wild_type",
-        "mutant",
+        *GENOMIC_KEY,
         "protvar_ddg",
         "pocket_buriedness",
         "pocket_score",
         "in_predicted_pocket",
         "protvar_annotated",
+        "Gene",
+        "wild_type",
+        "mutant",
     ]
-].drop_duplicates(["gene", "residue", "wild_type", "mutant"])
-structure = structure.merge(
-    supplement, on=["gene", "residue", "wild_type", "mutant"], how="left"
+].drop_duplicates(GENOMIC_KEY)
+supplement = supplement.rename(
+    columns={
+        "Gene": "protvar_gene",
+        "wild_type": "protvar_wild_type",
+        "mutant": "protvar_mutant",
+    }
+)
+structure["chromosome"] = structure.chromosome.astype(str).str.removesuffix(".0")
+structure["position"] = structure.position.astype("Int64")
+structure = structure.merge(supplement, on=GENOMIC_KEY, how="left")
+
+PROTVAR_COLUMNS = [
+    "protvar_ddg",
+    "pocket_buriedness",
+    "pocket_score",
+    "in_predicted_pocket",
+    "protvar_annotated",
+]
+disagrees = structure.protvar_annotated.fillna(False).astype(bool) & (
+    (structure.protvar_gene != structure.gene)
+    | (structure.protvar_wild_type != structure.wild_type)
+    | (structure.protvar_mutant != structure.mutant)
+)
+if disagrees.any():
+    print(
+        f"  {int(disagrees.sum())} ProtVar rows describe a different change and are dropped"
+    )
+structure.loc[disagrees, PROTVAR_COLUMNS] = np.nan
+structure = structure.drop(
+    columns=["protvar_gene", "protvar_wild_type", "protvar_mutant"]
 )
 structure["foldx_ddg"] = structure.foldx_ddg.fillna(structure.protvar_ddg)
 structure = structure.drop(columns="protvar_ddg")
@@ -474,7 +502,7 @@ accession_of = (
 )
 pending_lines = []
 for row in pending.itertuples():
-    accession = accession_of.get(str(row.chromosome).removesuffix(".0"))
+    accession = accession_of.get(row.chromosome)
     if accession and pd.notna(row.position):
         pending_lines.append(
             f"{accession}:g.{int(row.position)}{row.genomic_ref}>{row.genomic_alt}"
